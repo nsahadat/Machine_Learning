@@ -52,7 +52,7 @@ test_loss, test_acc = network.evaluate(test_data, test_lab)
 
 # print the outputs
 print('test loss = ', test_loss)
-print('Accuracy = ', test_acc)
+print('Accuracy (%) = ', test_acc*100)
 
 
 
