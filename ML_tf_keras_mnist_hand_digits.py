@@ -6,7 +6,6 @@ Created on Sun May 19 15:41:27 2019
 """
 # using tensor flow with keras
 import tensorflow as tf
-from tensorflow import keras
 
 # for the dataset loading
 from keras.datasets import mnist 
@@ -19,12 +18,12 @@ print('Loading dataset succesful.........')
 
 # let's build the network
 # create type of network
-model = tf.keras.Sequential([keras.layers.Dense(512, activation = tf.nn.relu, input_shape = (28*28, )), 
-                        keras.layers.Dense(10, activation = tf.nn.softmax)
-                        ])
+model = tf.keras.Sequential([tf.keras.layers.Dense(512, activation = tf.nn.relu, input_shape = (28*28,)), 
+                             tf.keras.layers.Dense(10, activation = tf.nn.softmax)
+                             ])
 
 # let's define optimizer, loss, metric
-model.compile(optimizer = 'adam', loss = 'categorical_crossentropy', metrics = ['accuracy'])
+model.compile(optimizer = 'rmsprop', loss = 'categorical_crossentropy', metrics = ['accuracy'])
 
 # converting dataset to the right format
 train_data = train_data.reshape(len(train_data),28*28)
