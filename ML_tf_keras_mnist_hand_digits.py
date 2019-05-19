@@ -18,7 +18,7 @@ print('Loading dataset succesful.........')
 
 # let's build the network
 # create type of network
-model = tf.keras.Sequential([tf.keras.layers.Dense(512, activation = tf.nn.relu, input_shape = (28*28,)), 
+model = tf.keras.models.Sequential([tf.keras.layers.Dense(512, activation = tf.nn.relu, input_shape = (28*28,)), 
                              tf.keras.layers.Dense(10, activation = tf.nn.softmax)
                              ])
 
