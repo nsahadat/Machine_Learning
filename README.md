@@ -5,4 +5,4 @@ This repository has the simple deep learning python scripts
 
 #### ConfusionMatrix Multiclass contains codes to extract parameters such as accuracy, sensitivity, specificity
 
-#### ML_IMDB_review: file contains an example of binary classifier (positive or negative) and good example to show overfitting using training and validation data
+#### ML_IMDB_review: file contains an example of binary classifier (positive or negative) and good example to show overfitting using training and validation data, loss vs epochs and accuracy vs epochs are alos shown in the two figure files
