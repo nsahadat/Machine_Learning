@@ -64,7 +64,7 @@ trainRes = model.fit(x_train_part,
 
 #%% plotting part
 #print(trainRes.history.keys())
-#(loss, acc) = model.evaluate(x_test, y_test)
+
 
 train_loss = trainRes.history['loss']
 val_loss = trainRes.history['val_loss']
@@ -93,7 +93,15 @@ plt.grid(True)
 plt.legend()
 plt.title('Accuracy vs. Epoch graph')
 
+#%% finally change the model file epochs to evaluate with testing data
+model.fit(x_train, 
+          y_train, 
+          epochs = 4, 
+          batch_size = 512)
 
+(loss, acc) = model.evaluate(x_test, y_test)
+print ('loss : ', loss)
+print('Accuracy(%) :', acc*100)
 
 
 
