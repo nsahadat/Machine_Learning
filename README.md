@@ -14,4 +14,9 @@ This repository has the simple deep learning python scripts
 ## generating a nice looking confusion matrix using this custom function
 1. A function is written to generate a nice looking confusion matrix plot.
 
-## ML_IMDB_review: file contains an example of binary classifier (positive or negative) and good example to show overfitting using training and validation data, loss vs epochs and accuracy vs epochs are alos shown in the two figure files
+## Credit Card Fraud Detection
+1. To do: data augmentation
+2. To do: Gaussian mixture based fraud detection model development
+3. To do: Classification based model development: Logistic regression, SVM and so forth
+4. To do: Isolation forest based algorithm development
+5. To do: One class SVM based algorithm development
