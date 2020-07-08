@@ -1,4 +1,4 @@
-#Ongoing project:
+# Ongoing project:
 ## linear SVM based recognition: implemented
 ## Kernal based SVM: implemented
 ## gridsearch to improve SVM parameters: implemented
