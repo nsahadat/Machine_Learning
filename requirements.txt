@@ -1,0 +1,10 @@
+numpy
+pandas
+matplotlib
+torch
+torchvision
+keras
+tensorflow
+category_encoders
+scikit-learn
+transformers
