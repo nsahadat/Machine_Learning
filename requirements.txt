@@ -9,3 +9,5 @@ category_encoders
 scikit-learn
 transformers
 xgboost
+datasets
+evaluate

@@ -54,7 +54,7 @@ params = {'n_estimators':np.arange(200, 500, 10),
         'max_depth': np.arange(5, 20, 1)
          }
 
-skf = StratifiedKFold(n_splits=10, shuffle= True, random_state= 17)
+skf = StratifiedKFold(n_splits=2, shuffle= True, random_state= 17)
 
 best_clf = GridSearchCV(estimator= clf, param_grid= params, scoring = 'neg_root_mean_squared_error',
                          cv= skf, verbose= True, n_jobs= -1)
