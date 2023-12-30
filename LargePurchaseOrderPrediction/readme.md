@@ -22,7 +22,7 @@ final ground truth and predicted values can be found in this file:
 predicted_value_imputation.csv
 
 ## Summary:
-1. simple autoencoder by masking column values are tried before using conventional way using this code:
+1. simple autoencoder by masking column values are tried using this code:
    LargeScaleOrderPrediction.ipynb
 2. LLMs tends to work better predicting tabular column values since # of categorical columns more than numerical columns
 3. 2 LLMs are tried BERT and GPT2
