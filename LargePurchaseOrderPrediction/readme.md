@@ -1,9 +1,9 @@
-Data:
+## Data:
 Data used from following tabular data:
 https://www.kaggle.com/datasets/sohier/large-purchases-by-the-state-of-ca
 this data needs to be saved in the ./Data folder of the code
 
-Code:
+## Code:
 Please do: pip install requirements.txt
 data is preprocessed for huggingface dataset using following notebook:
 ProcessDataset.ipynb
@@ -12,11 +12,11 @@ NextValuePrediction_train.ipynb
 trained model is saved in the ./gpt2_finetuned directory where model can be loaded and predict the new missing tabular column
 NextValuePrediction_Evaluation.ipynb is used to predict the column values
 
-results:
+## results:
 final ground truth and predicted values can be found in this file:
 predicted_value_imputation.csv
 
-summary:
+## summary:
 1. simple autoencoder by masking column values are tried before using conventional way using this code:
    LargeScaleOrderPrediction.ipynb
 2. LLMs tends to work better predicting tabular column values since # of categorical columns more than numerical columns
