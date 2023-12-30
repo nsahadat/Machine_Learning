@@ -4,11 +4,16 @@ https://www.kaggle.com/datasets/sohier/large-purchases-by-the-state-of-ca
 this data needs to be saved in the ./Data folder of the code
 
 ## Code:
-Please do: pip install requirements.txt
+### To do:
+pip install requirements.txt
+
+### instructions to follow the codes
 data is preprocessed for huggingface dataset using following notebook:
 ProcessDataset.ipynb
+
 training GPT2 can be found in the following notebook:
 NextValuePrediction_train.ipynb
+
 trained model is saved in the ./gpt2_finetuned directory where model can be loaded and predict the new missing tabular column
 NextValuePrediction_Evaluation.ipynb is used to predict the column values
 
