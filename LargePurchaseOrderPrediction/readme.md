@@ -18,7 +18,7 @@ trained model is saved in the ./gpt2_finetuned directory where model can be load
 NextValuePrediction_Evaluation.ipynb is used to predict the column values
 
 ## Results:
-final ground truth and predicted values can be found in this file:
+final ground truth vs. predicted values can be found in this file:
 predicted_value_imputation.csv
 
 ## Summary:
