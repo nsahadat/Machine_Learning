@@ -44,7 +44,6 @@ from transformers import AutoTokenizer
 # Use a pipeline as a high-level helper
 from transformers import pipeline
 
-access_token = "***" # add your HF access token
 
 # Load model directly
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
