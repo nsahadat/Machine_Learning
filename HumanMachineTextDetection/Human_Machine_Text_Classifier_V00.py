@@ -53,8 +53,8 @@ model = AutoModelForSequenceClassification.from_pretrained("bert-base-cased", nu
 
 from datasets import load_dataset, concatenate_datasets
 # 'wiki_labeled', 'research_abstracts_labeled'
-dataset1 = load_dataset("NicolaiSivesind/human-vs-machine", "wiki_labeled", token = access_token)
-dataset2 = load_dataset("NicolaiSivesind/human-vs-machine", "research_abstracts_labeled", token = access_token)
+dataset1 = load_dataset("NicolaiSivesind/human-vs-machine", "wiki_labeled")
+dataset2 = load_dataset("NicolaiSivesind/human-vs-machine", "research_abstracts_labeled")
 
 
 dataset_train = concatenate_datasets([dataset1['train'], dataset2['train']])
