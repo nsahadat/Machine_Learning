@@ -1,6 +1,9 @@
 ## Step 1: Install requirements.txt file
 - create a custom environment and install all required packages from requirements.txt
 - activate the same environment to run fastapi command
+- run pip install command:
+
+pip install -r requirements.txt
 
 ## Information: Two parts need to be run using the command window
 - from the command window browse to the directory of the files

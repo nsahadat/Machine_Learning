@@ -1,0 +1,7 @@
+fastapi==0.110.1
+uvicorn==0.29.0
+pydantic==2.7.1
+python-chess==1.999
+torch==2.2.2
+sqlalchemy==2.0.30
+pandas==2.2.2
