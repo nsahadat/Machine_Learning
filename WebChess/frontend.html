@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Play Chess vs RL Agent</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css" />
+</head>
+<body>
+
+<div id="board" style="width: 600px"></div>
+
+<!-- Promotion Modal -->
+<div id="promotionModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+    background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000;">
+    
+    <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
+        <h3>Choose Promotion Piece</h3>
+        <div id="promotionOptions" style="margin-top: 15px;">
+            <button onclick="selectPromotion('q')">♕ Queen</button>
+            <button onclick="selectPromotion('r')">♖ Rook</button>
+            <button onclick="selectPromotion('b')">♗ Bishop</button>
+            <button onclick="selectPromotion('n')">♘ Knight</button>
+        </div>
+    </div>
+</div>
+
+<div style="margin-bottom: 10px;">
+    <span id="playerWins">Player Wins: 0</span> | 
+    <span id="agentWins">Agent Wins: 0</span> | 
+    <span id="draws">Draws: 0</span>
+</div>
+
+<button id="restartBtn" style="margin: 10px; padding: 10px;">Restart Game</button>
+<div id="board" style="width: 400px;"></div>
+
+<!-- Load libraries FIRST -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+
+<!-- Then custom JS -->
+<script>
+    let playerWinCount = 0;
+    let agentWinCount = 0;
+    let drawCount = 0;
+    var promotionPiece = null;  // Variable to hold the piece selected for promotion
+    var pendingPromotion = null;
+
+    var board = Chessboard('board', {
+        draggable: true,
+        dropOffBoard: 'snapback',
+        position: 'start',
+        pieceTheme: 'img/chesspieces/wikipedia/{piece}.png',
+        onDrop: onDrop
+    });
+
+    var game = new Chess();
+    
+    function onDrop(source, target) {
+        if (isPawnPromotion(source, target)) {
+            showPromotionPopup(source, target);
+            return;
+        }
+
+        var move = game.move({
+            from: source,
+            to: target,
+            promotion: 'q' // Default, not used here
+        });
+
+        if (move === null) return 'snapback';
+
+        sendMoveToBackend(move.from, move.to);
+    }
+
+    function updateScoreDisplay() {
+        document.getElementById('playerWins').innerText = `Player Wins: ${playerWinCount}`;
+        document.getElementById('agentWins').innerText = `Agent Wins: ${agentWinCount}`;
+        document.getElementById('draws').innerText = `Draws: ${drawCount}`;
+    }
+
+    function sendMoveToBackend(from, to, promotion = null) {
+        if (promotion === null && isPawnPromotion(from, to)) {
+            // Show the promotion popup if the pawn reaches the last row
+            showPromotionPopup(from, to);
+            return; // Don't send the move yet; wait for the player to choose
+        }
+
+        fetch('http://127.0.0.1:8000/move', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ from_: from, to: to, promotion: promotion })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                console.error(data.error);
+                return;
+            }
+
+            // Update the board
+            game.move({
+                from: data.from,
+                to: data.to,
+                promotion: data.promotion || 'q'  // Default to Queen if no promotion returned
+            });
+
+            board.position(game.fen());
+
+            if (data.game_over) {
+                if (data.winner === "player") {
+                    playerWinCount++;
+                } else if (data.winner === "agent") {
+                    agentWinCount++;
+                } else if (data.winner === "draw") {
+                    drawCount++;
+                }
+                updateScoreDisplay();
+
+                setTimeout(() => {
+                    if (confirm("Game Over! " + (data.winner === "draw" ? "It's a draw!" : (data.winner + " wins!")) + " Play again?")) {
+                        document.getElementById('restartBtn').click();
+                    }
+                }, 3000);
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+        });
+    }
+
+    function showPromotionPopup(source, target) {
+        pendingPromotion = { source: source, target: target };
+        document.getElementById('promotionModal').style.display = 'flex';
+    }
+
+    function promotePawn(piece) {
+        // Hide the popup
+        document.getElementById("promotionPopup").style.display = "none";
+        // Send the promotion to the backend
+        sendMoveToBackend(promotionFrom, promotionTo, piece);
+    }
+
+    function isPawnPromotion(source, target) {
+        var piece = game.get(source);
+        if (!piece || piece.type !== 'p') return false;
+
+        // Check if pawn is moving to last rank
+        if ((piece.color === 'w' && target[1] === '8') || (piece.color === 'b' && target[1] === '1')) {
+            return true;
+        }
+        return false;
+    }
+
+    function selectPromotion(promotionPiece) {
+        document.getElementById('promotionModal').style.display = 'none';
+
+        if (!pendingPromotion) return;
+
+        var move = game.move({
+            from: pendingPromotion.source,
+            to: pendingPromotion.target,
+            promotion: promotionPiece
+        });
+
+        if (move === null) {
+            board.position(game.fen());
+            pendingPromotion = null;
+            return;
+        }
+
+        sendMoveToBackend(move.from, move.to, promotionPiece);
+        board.position(game.fen());
+        pendingPromotion = null;
+    }
+
+    document.getElementById('restartBtn').addEventListener('click', function() {
+        fetch('http://127.0.0.1:8000/restart', {
+            method: 'POST'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(data.message);
+            game.reset();           // Reset the local game object
+            board.start();          // Reset the board UI
+        })
+        .catch(error => {
+            console.error("Error restarting game:", error);
+        });
+    });
+
+
+</script>
+
+</body>
+</html>
