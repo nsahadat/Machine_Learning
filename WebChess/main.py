@@ -137,8 +137,8 @@ def pick_agent_move(board):
     # input_tensor = encode_fen(fen)
     # input_tensor = input_tensor.unsqueeze(0)  # Add batch dimension
 
-    input_tensor = encode_fen_conv(fen)
-    input_tensor = input_tensor.unsqueeze(0).unsqueeze(0)
+    input_tensor = one_hot_encode_fen(fen)
+    input_tensor = input_tensor.unsqueeze(0)
 
     with torch.no_grad():
         logits = model(input_tensor)
