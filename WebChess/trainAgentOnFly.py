@@ -59,17 +59,17 @@ def add_step_rewards(df):
                 reward += 0.1
 
             # 4. Material loss penalty (based on material balance diff)
-            # new_material_balance = sum(
-            #     piece_value(p) for p in board.piece_map().values()
-            # )
-            # material_diff = new_material_balance - prev_material_balance
+            new_material_balance = sum(
+                piece_value(p) for p in board.piece_map().values()
+            )
+            material_diff = new_material_balance - prev_material_balance
 
-            # if players[i] == result:  # Current move made by the winner
-            #     reward += max(material_diff, 0) * 0.2  # Reward for maintaining advantage
-            # else:
-            #     reward += min(material_diff, 0) * 0.2  # Penalty for losing material
+            if players[i] == result:  # Current move made by the winner
+                reward += max(material_diff, 0) * 0.2  # Reward for maintaining advantage
+            else:
+                reward += min(material_diff, 0) * 0.2  # Penalty for losing material
 
-            # prev_material_balance = new_material_balance
+            prev_material_balance = new_material_balance
 
             # 5. End-of-game bonus or penalty
             if board.is_game_over():
@@ -164,7 +164,7 @@ class ChessNet(nn.Module):
     def forward(self, x):
         return self.model(x)
     
-    def save(self, path):
+    def save(self, path="chess_rl_model.pth"):
         """Save the model state."""
         torch.save({
             'model_state_dict': self.state_dict(),
@@ -172,7 +172,7 @@ class ChessNet(nn.Module):
         }, path)
 
     @classmethod
-    def load(cls, path):
+    def load(cls, path="chess_rl_model.pth"):
         """Load model from file."""
         checkpoint = torch.load(path, map_location=torch.device('cpu'))
         model = cls(num_moves=checkpoint['num_moves'])
@@ -198,14 +198,14 @@ class ConvChessNet(nn.Module):
         x = F.relu(self.fc1(x))
         return self.fc2(x)
 
-    def save(self, path):
+    def save(self, path="conv_chess_model.pth"):
         torch.save({
             'model_state_dict': self.state_dict(),
             'num_moves': self.num_moves
         }, path)
 
     @classmethod
-    def load(cls, path):
+    def load(cls, path="conv_chess_model.pth"):
         checkpoint = torch.load(path, map_location=torch.device('cpu'))
         model = cls(num_moves=checkpoint['num_moves'])
         model.load_state_dict(checkpoint['model_state_dict'])
@@ -234,7 +234,7 @@ def generate_all_possible_moves():
 def train_and_save_model(db_path="chess_games.db", 
                          model_path="chess_rl_model.pth", 
                          epochs=300, 
-                         batch_size=32, 
+                         batch_size=64, 
                          gamma=0.99,
                          target_update_freq=100):
     
@@ -277,11 +277,12 @@ def train_and_save_model(db_path="chess_games.db",
 
     num_moves = len(move_to_idx)
 
-    if os.path.exists("chess_rl_model.pth"):
-        model = ChessNet.load("chess_rl_model.pth")
-    else:
-        model = ChessNet(num_moves)
-    # model = ConvChessNet(num_moves)
+    try:
+        # model = ChessNet.load()
+        model = ConvChessNet.load()
+    except:
+        # model = ChessNet(num_moves)
+        model = ConvChessNet(num_moves)
 
     target_model = copy.deepcopy(model)
     target_model.eval()
@@ -289,15 +290,15 @@ def train_and_save_model(db_path="chess_games.db",
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     # Convert dataset to tensors
-    state_tensors = torch.stack([encode_fen(d["state"]) for d in dataset])
-    next_state_tensors = torch.stack([encode_fen(d["next_state"]) for d in dataset])
-    actions = torch.tensor([move_to_idx[d["action"]] for d in dataset], dtype=torch.long)
-    rewards = torch.tensor([d["reward"] for d in dataset], dtype=torch.float32)
-
-    # state_tensors = torch.stack([one_hot_encode_fen(d["state"]) for d in dataset])
-    # next_state_tensors = torch.stack([one_hot_encode_fen(d["next_state"]) for d in dataset])
+    # state_tensors = torch.stack([encode_fen(d["state"]) for d in dataset])
+    # next_state_tensors = torch.stack([encode_fen(d["next_state"]) for d in dataset])
     # actions = torch.tensor([move_to_idx[d["action"]] for d in dataset], dtype=torch.long)
     # rewards = torch.tensor([d["reward"] for d in dataset], dtype=torch.float32)
+
+    state_tensors = torch.stack([one_hot_encode_fen(d["state"]) for d in dataset])
+    next_state_tensors = torch.stack([one_hot_encode_fen(d["next_state"]) for d in dataset])
+    actions = torch.tensor([move_to_idx[d["action"]] for d in dataset], dtype=torch.long)
+    rewards = torch.tensor([d["reward"] for d in dataset], dtype=torch.float32)
 
     for epoch in range(epochs):
         permutation = torch.randperm(state_tensors.size(0))
@@ -332,13 +333,13 @@ def train_and_save_model(db_path="chess_games.db",
 
         if epoch % target_update_freq == 0:
             target_model.load_state_dict(model.state_dict())
+            model.save()
 
         if epoch%10==0:
             print(f"Epoch {epoch+1}/{epochs} | Loss: {loss.item():.4f}")
 
     
     # Save model
-    # model.save("conv_chess_model.pth")
-    model.save("chess_rl_model.pth")
+    model.save()
     print(f"✅ Model saved as {model_path}")
 

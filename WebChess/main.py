@@ -14,23 +14,14 @@ import random
 from trainAgentOnFly import *
 from fastapi import BackgroundTasks
 
-def load_model(model_path="chess_rl_model.pth"):
-    # The model class should match the one used during training
-    # model = ChessNet(num_moves=len(ALL_MOVES))
-    model.load_state_dict(torch.load(model_path))
-    model.eval()  # Set the model to evaluation mode
-    print(f"✅ Model loaded from {model_path}")
-    return model
-
-
 ALL_MOVES = generate_all_possible_moves()
 MOVE_TO_INDEX = {move: i for i, move in enumerate(ALL_MOVES)}
 INDEX_TO_MOVE = {i: move for move, i in MOVE_TO_INDEX.items()}
 
 EPSILON = 0.1  # 10% exploration; tweak as needed
-# model = ConvChessNet.load("conv_chess_model.pth")
 
-model = ChessNet.load("chess_rl_model.pth")
+model = ConvChessNet.load()
+# model = ChessNet.load()
 
 app = FastAPI()
 
@@ -142,11 +133,12 @@ def index_to_move(index: int) -> str:
 
 def pick_agent_move(board):
     fen = board.fen()
-    input_tensor = encode_fen(fen)
-    input_tensor = input_tensor.unsqueeze(0)  # Add batch dimension
+    
+    # input_tensor = encode_fen(fen)
+    # input_tensor = input_tensor.unsqueeze(0)  # Add batch dimension
 
-    # input_tensor = encode_fen_conv(fen)
-    # input_tensor = input_tensor.unsqueeze(0).unsqueeze(0)
+    input_tensor = encode_fen_conv(fen)
+    input_tensor = input_tensor.unsqueeze(0).unsqueeze(0)
 
     with torch.no_grad():
         logits = model(input_tensor)
@@ -212,9 +204,8 @@ def finalize_session(db, background_tasks: BackgroundTasks):
 
     # defining global then reloading the model
     global model
-    # model = load_model()
-    # model = ConvChessNet.load("conv_chess_model.pth")
-    model = ChessNet.load("chess_rl_model.pth")
+    model = ConvChessNet.load()
+    # model = ChessNet.load()
 
     return winner
 
