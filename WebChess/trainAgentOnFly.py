@@ -7,7 +7,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import copy
 import os
-    
+from torch.utils.data import Dataset, DataLoader   
 
 piece_to_num = {
     'p': 1, 'n': 2, 'b': 3, 'r': 4, 'q': 5, 'k': 6,
@@ -149,6 +149,39 @@ def prepare_dataset(df):
             })
     return dataset
 
+class ChessDataset(Dataset):
+    def __init__(self, df, move_to_idx, one_hot_encoder):
+        self.samples = []
+
+        for session_id, group in df.groupby("session_id"):
+            group = group.sort_values("move_number").reset_index(drop=True)
+            for i in range(len(group)):
+                prev_fen = chess.STARTING_FEN if i == 0 else group.iloc[i - 1]["fen"]
+                current = group.iloc[i]
+
+                self.samples.append({
+                    "state": prev_fen,
+                    "action": move_to_idx.get(current["move_uci"], -1),
+                    "reward": current["reward"],
+                    "next_state": current["fen"]
+                })
+
+        self.one_hot_encoder = one_hot_encoder
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        sample = self.samples[idx]
+        return {
+            "state": self.one_hot_encoder(sample["state"]),
+            "next_state": self.one_hot_encoder(sample["next_state"]),
+            "action": torch.tensor(sample["action"], dtype=torch.long),
+            "reward": torch.tensor(sample["reward"], dtype=torch.float32)
+        }
+
+
+
 class ChessNet(nn.Module):
     def __init__(self, num_moves):
         super().__init__()
@@ -236,7 +269,8 @@ def train_and_save_model(db_path="chess_games.db",
                          epochs=300, 
                          batch_size=64, 
                          gamma=0.99,
-                         target_update_freq=100):
+                         target_update_freq=100,
+                         shuffle=True):
     
     # Connect to database
     conn = sqlite3.connect(db_path)
@@ -261,14 +295,14 @@ def train_and_save_model(db_path="chess_games.db",
     df = add_step_rewards(df)
 
     # normalize the reward
-    df["reward"] = (df["reward"] - df["reward"].mean()) / (df["reward"].std() + 1e-6)
+    # df["reward"] = (df["reward"] - df["reward"].mean()) / (df["reward"].std() + 1e-6)
     df.dropna(subset=["reward"], inplace=True)
     print(f"Number of sessions in the dataset: {df.session_id.nunique()}")
 
     #keep only one player now
     # df = df[df.player == df.result].reset_index(drop=True)
 
-    dataset = prepare_dataset(df)
+    # dataset = prepare_dataset(df)
 
     ALL_MOVES = generate_all_possible_moves()
     all_moves = sorted(list(set(ALL_MOVES)))
@@ -295,19 +329,20 @@ def train_and_save_model(db_path="chess_games.db",
     # actions = torch.tensor([move_to_idx[d["action"]] for d in dataset], dtype=torch.long)
     # rewards = torch.tensor([d["reward"] for d in dataset], dtype=torch.float32)
 
-    state_tensors = torch.stack([one_hot_encode_fen(d["state"]) for d in dataset])
-    next_state_tensors = torch.stack([one_hot_encode_fen(d["next_state"]) for d in dataset])
-    actions = torch.tensor([move_to_idx[d["action"]] for d in dataset], dtype=torch.long)
-    rewards = torch.tensor([d["reward"] for d in dataset], dtype=torch.float32)
+    # state_tensors = torch.stack([one_hot_encode_fen(d["state"]) for d in dataset])
+    # next_state_tensors = torch.stack([one_hot_encode_fen(d["next_state"]) for d in dataset])
+    # actions = torch.tensor([move_to_idx[d["action"]] for d in dataset], dtype=torch.long)
+    # rewards = torch.tensor([d["reward"] for d in dataset], dtype=torch.float32)
+
+    dataset = ChessDataset(df, move_to_idx, one_hot_encode_fen)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
     for epoch in range(epochs):
-        permutation = torch.randperm(state_tensors.size(0))
-        for i in range(0, state_tensors.size(0), batch_size):
-            idx = permutation[i:i+batch_size]
-            s = state_tensors[idx]
-            a = actions[idx]
-            r = rewards[idx]
-            s_next = next_state_tensors[idx]
+        for batch in dataloader:
+            s = batch["state"]
+            a = batch["action"]
+            r = batch["reward"]
+            s_next = batch["next_state"]
 
             # Compute Q-values
             q_values = model(s)

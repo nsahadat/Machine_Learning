@@ -12,6 +12,8 @@ from typing import Optional
 import torch
 import random
 from trainAgentOnFly import *
+from mcts import *
+from utils import *
 from fastapi import BackgroundTasks
 
 ALL_MOVES = generate_all_possible_moves()
@@ -105,6 +107,7 @@ def player_move(move: MoveRequest, background_tasks: BackgroundTasks):
 
     # Agent move
     agent_move = pick_agent_move(board)
+    # agent_move = pick_agent_move_mcts(board)
     board.push(agent_move)
     move_count += 1
     save_move(db, session_id, move_count, agent_move.uci(), "agent", board.fen())
@@ -130,6 +133,18 @@ def move_to_index(move_str: str) -> int:
 
 def index_to_move(index: int) -> str:
     return INDEX_TO_MOVE.get(index, None)
+
+def pick_agent_move_mcts(board):
+    model_mct = ChessValueNet()
+    model_mct.load_state_dict(torch.load("value_net.pth", map_location=torch.device('cpu')))
+    mcts = MCTS(value_net=model_mct, simulations=1000)  # Use value net MCTS
+
+    best_move = mcts.search(board)
+    if best_move not in board.legal_moves:
+        print("MCTS selected an illegal move, defaulting to random.")
+        return random.choice(list(board.legal_moves))
+    
+    return best_move
 
 def pick_agent_move(board):
     fen = board.fen()
@@ -200,7 +215,7 @@ def finalize_session(db, background_tasks: BackgroundTasks):
         db.commit()
 
     # ✅ Trigger model training in background
-    background_tasks.add_task(train_and_save_model, epochs=300, target_update_freq=100)
+    # background_tasks.add_task(train_and_save_model, epochs=300, target_update_freq=100)
 
     # defining global then reloading the model
     global model
